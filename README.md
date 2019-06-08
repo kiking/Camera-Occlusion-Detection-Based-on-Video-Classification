@@ -1,2 +1,56 @@
-# Camera-Occlusion-Detection-Based-on-Video-Classification
+# 基于视频分类的监控摄像机遮挡检测
 Camera Occlusion Detection Based on Video Classification
+
+本项目使用基于深度学习的视频分类方法来进行监控摄像机的遮挡检测
+
+## 运行环境要求
+
+代码要求安装Keras 2 和 TensorFlow 1 或者更高版本，详情请见`requirements.txt`文件。
+你可以运行命令：
+
+`pip install -r requirements.txt`
+
+你还需要安装`ffmpeg`用来提取视频帧，以及需要MATLAB来进行数据预处理阶段的图像增强
+
+## 数据准备
+
+首先，在`data`文件夹中准备好训练集`train`和测试集`test`，再使用命令`mkdir sequences && mkdir checkpoints`创建新的文件夹。
+
+然后，运行`python extract_files.py`来提取视频帧，并用CSV文件记录下视频信息，以供后续代码使用。
+
+## 数据预处理
+
+### 直方图均衡化(HE)
+
+`data_histeq.m`对视频帧进行直方图均衡化，提高图像对比度。
+
+### 限制对比度的自适应直方图均衡化(CLAHE)
+
+对于像素分布比较均衡的图像，普通的直方图均衡化效果不错，但是当画面中存在明显比其他区域暗或者亮的部分时，在这些局部的对比度将得不到有效提升。针对普通的直方图均衡化的不足，可以进一步使用`data_adapthisteq.m`对视频帧进行限制对比度的自适应直方图均衡化。
+
+## 遮挡检测
+
+使用基于深度学习的视频分类方法来进行监控摄像头遮挡检测。与图像分类不同，视频拥有两个重要特征：表观特征和时序特征。根据是否考虑视频的时序特征，分为2种视频分类的方法。**忽略视频时序属性的视频分类**把视频视作离散的图像的集合，将视频分类问题简化为图像分类，这种分类方法一般也被视作视频分类的基准方法。**考虑视频时序属性的视频分类**有多种处理视频时序信息的方法，这里我们使用LSTM学习长期依赖。
+
+### 忽略视频时序属性的视频分类
+
+`train_cnn.py`迁移学习了在`ImageNet`上预训练的`Inception-V3`模型，使用`transfer learning`和`fine tune`相结合，在监控视频数据集上重载训练。
+
+### 考虑视频时序属性的视频分类
+
+#### 提取特征序列
+
+`extract_features.py`提取视频帧图像特征，组合成特征序列。
+
+#### 训练模型
+
+`train.py`训练模型。模型在`models.py`中定义。
+
+训练日志保存为TensorBoard文件，可以使用`tensorboard --logdir=data/logs`命令来查看训练过程。
+
+## 展望
+
+- [ ] 添加数据扩充以对抗过拟合
+- [ ] 实现光流图像
+- [ ] 实现更复杂的网络架构，如光流/CNN融合
+ 
